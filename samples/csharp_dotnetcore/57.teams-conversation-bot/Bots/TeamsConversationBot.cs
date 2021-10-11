@@ -40,8 +40,8 @@ namespace Microsoft.BotBuilderSamples.Bots
             turnContext.Activity.RemoveRecipientMention();
             var text = turnContext.Activity.Text.Trim().ToLower();
 
-             if (text.Contains("mention"))
-                await MentionActivityAsync(turnContext, cancellationToken);
+             if (text.Contains("remindmelater"))
+                await SendReminderSetMessage(turnContext, cancellationToken);
             else if(text.Contains("who"))
                 await GetSingleMemberAsync(turnContext, cancellationToken);
             else if(text.Contains("update"))
@@ -78,7 +78,9 @@ namespace Microsoft.BotBuilderSamples.Bots
 
 
             //ReminderCreateModel model =
-                //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
+            //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
+
+            //((JObject)action.Data)["includeImage"]?.ToString()
             var heroCard = new HeroCard
             {
                 Title = $"{action.MessagePayload.From?.User?.DisplayName} Your message is scheduled for later time:",
@@ -121,6 +123,44 @@ namespace Microsoft.BotBuilderSamples.Bots
                 },
             };
         }
+
+        private async Task SendReminderSetMessage(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            // The user has chosen to share a message by choosing the 'Share Message' context menu command.
+
+
+            //ReminderCreateModel model =
+            //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
+            string input = turnContext.Activity.Text.Trim().ToLower();
+            string outputString = input.Replace("RemindMeLater", "");
+            var heroCard = new HeroCard
+            {
+                Title = $"Reminder has been scheduled!",
+                Text = outputString,
+            };
+
+            var activity = MessageFactory.Attachment(heroCard.ToAttachment());
+
+            await turnContext.SendActivityAsync(activity, cancellationToken);
+
+/*            return new MessagingExtensionActionResponse
+            {
+                ComposeExtension = new MessagingExtensionResult
+                {
+                    Type = "result",
+                    AttachmentLayout = "list",
+                    Attachments = new List<MessagingExtensionAttachment>()
+                    {
+                        new MessagingExtensionAttachment
+                        {
+                            Content = heroCard,
+                            ContentType = HeroCard.ContentType,
+                            Preview = heroCard.ToAttachment(),
+                        },
+                    },
+                },
+            };
+*/        }
 
 
 
