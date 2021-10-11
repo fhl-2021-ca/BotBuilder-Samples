@@ -55,6 +55,72 @@ namespace Microsoft.BotBuilderSamples.Bots
                 await CardActivityAsync(turnContext, false, cancellationToken);
         }
 
+        protected override async Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionSubmitActionAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
+        {
+            switch (action.CommandId)
+            {
+                //case "createCard":
+                //  return CreateCardCommand(turnContext, action);
+                case "RemindMeLater":
+                    return ShareMessageCommand(turnContext, action);
+                    /*                case "webView":
+                                        return WebViewResponse(turnContext, action);
+                                    case "createAdaptiveCard":
+                                        return CreateAdaptiveCardResponse(turnContext, action);
+                    */                //case "razorView":
+                                      //  return RazorViewResponse(turnContext, action);
+            }
+            return new MessagingExtensionActionResponse();
+        }
+
+        private MessagingExtensionActionResponse ShareMessageCommand(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action)
+        {
+            // The user has chosen to share a message by choosing the 'Share Message' context menu command.
+            var heroCard = new HeroCard
+            {
+                Title = $"{action.MessagePayload.From?.User?.DisplayName} orignally sent this message:",
+                Text = action.MessagePayload.Body.Content,
+            };
+
+            if (action.MessagePayload.Attachments != null && action.MessagePayload.Attachments.Count > 0)
+            {
+                // This sample does not add the MessagePayload Attachments.  This is left as an
+                // exercise for the user.
+                heroCard.Subtitle = $"({action.MessagePayload.Attachments.Count} Attachments not included)";
+            }
+
+            // This Messaging Extension example allows the user to check a box to include an image with the
+            // shared message.  This demonstrates sending custom parameters along with the message payload.
+            var includeImage = ((JObject)action.Data)["includeImage"]?.ToString();
+            if (string.Equals(includeImage, bool.TrueString, StringComparison.OrdinalIgnoreCase))
+            {
+                heroCard.Images = new List<CardImage>
+                {
+                    new CardImage { Url = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtB3AwMUeNoq4gUBGe6Ocj8kyh3bXa9ZbV7u1fVKQoyKFHdkqU" },
+                };
+            }
+
+            return new MessagingExtensionActionResponse
+            {
+                ComposeExtension = new MessagingExtensionResult
+                {
+                    Type = "result",
+                    AttachmentLayout = "list",
+                    Attachments = new List<MessagingExtensionAttachment>()
+                    {
+                        new MessagingExtensionAttachment
+                        {
+                            Content = heroCard,
+                            ContentType = HeroCard.ContentType,
+                            Preview = heroCard.ToAttachment(),
+                        },
+                    },
+                },
+            };
+        }
+
+
+
         protected override async Task OnTeamsMembersAddedAsync(IList<TeamsChannelAccount> membersAdded, TeamInfo teamInfo, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             foreach (var teamMember in membersAdded)

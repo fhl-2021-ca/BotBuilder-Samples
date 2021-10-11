@@ -1,56 +1,44 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.11/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.11",
   "version": "1.0.0",
-  "showLoadingIndicator": true,
+  "manifestVersion": "1.11",
   "id": "540bd0aa-6f46-407d-8906-9483cca81fdf",
   "packageName": "com.microsoft.teams.TeamsReminder",
+  "name": {
+    "short": "TeamsReminder",
+    "full": ""
+  },
   "developer": {
     "name": "https://microsoft.com",
     "websiteUrl": "https://microsoft.com",
     "privacyUrl": "https://microsoft.com/privacy",
     "termsOfUseUrl": "https://microsoft.com/tou"
   },
-  "icons": {
-    "color": "color.png",
-    "outline": "outline.png"
-  },
-  "name": {
-    "short": "TeamsReminder",
-    "full": ""
-  },
   "description": {
     "short": "Rind yourself",
     "full": "et reminders on message or just simply create a TODO task"
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
   },
   "accentColor": "#FFFFFF",
   "staticTabs": [
     {
       "entityId": "conversations",
-      "scopes": [
-        "personal"
-      ]
+      "scopes": [ "personal" ]
     },
     {
       "entityId": "about",
-      "scopes": [
-        "personal"
-      ]
+      "scopes": [ "personal" ]
     }
   ],
   "bots": [
     {
       "botId": "6ef0591f-dcbd-43a5-a27f-094e682abc63",
-      "scopes": [
-        "personal",
-        "team",
-        "groupchat"
-      ],
+      "scopes": [ "personal", "team", "groupchat" ],
       "commandLists": [
         {
-          "scopes": [
-            "personal"
-          ],
           "commands": [
             {
               "title": "ListReminders",
@@ -60,12 +48,10 @@
               "title": "RemindMeLater",
               "description": "Set a TODO remider for yourself"
             }
-          ]
+          ],
+          "scopes": [ "personal" ]
         },
         {
-          "scopes": [
-            "team"
-          ],
           "commands": [
             {
               "title": "ListReminders",
@@ -75,12 +61,10 @@
               "title": "RemindMeLater",
               "description": "Set a TODO remider for yourself"
             }
-          ]
+          ],
+          "scopes": [ "team" ]
         },
         {
-          "scopes": [
-            "groupchat"
-          ],
           "commands": [
             {
               "title": "ListReminders",
@@ -90,52 +74,39 @@
               "title": "RemindMeLater",
               "description": "Set a TODO remider for yourself"
             }
-          ]
+          ],
+          "scopes": [ "groupchat" ]
         }
       ],
-      "supportsFiles": true,
-      "isNotificationOnly": false
+      "isNotificationOnly": false,
+      "supportsFiles": true
     }
   ],
   "composeExtensions": [
     {
       "botId": "6ef0591f-dcbd-43a5-a27f-094e682abc63",
-      "canUpdateConfiguration": true,
       "commands": [
         {
           "id": "RemindMeLater",
           "type": "action",
-          "context": [ "message" ],
-          "description": "Command to run action to create a Card from Compose Box",
-          "title": "Create Card"
-        },
-        {
-          "id": "shareMessage",
-          "type": "action",
-          "context": [ "message" ],
-          "description": "Test command to run action on message context (message sharing)",
-          "title": "Share Message",
+          "title": "comand",
+          "description": "",
+          "initialRun": true,
+          "fetchTask": true,
+          "context": [ "message", "commandBox" ],
           "parameters": [
             {
-              "name": "includeImage",
-              "title": "Include Image",
-              "description": "Include image in Hero Card",
-              "inputType": "toggle"
+              "name": "param",
+              "title": "param",
+              "description": "",
+              "choices": []
             }
           ]
         }
-
+      ],
+      "canUpdateConfiguration": true,
+      "messageHandlers": []
     }
-
-
-  ]
-}
   ],
-  "permissions": [
-    "identity",
-    "messageTeamMembers"
-  ],
-  "validDomains": [
-    "*.example.com"
-  ]
+  "validDomains": []
 }
