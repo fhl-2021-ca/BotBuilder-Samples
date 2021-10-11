@@ -17,7 +17,8 @@ using Microsoft.Bot.Schema.Teams;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using AdaptiveCards.Templating;
-using Newtonsoft.Json;
+using System.Text.Json;
+using Teams.Conversation.Bot;
 
 namespace Microsoft.BotBuilderSamples.Bots
 {
@@ -39,9 +40,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             turnContext.Activity.RemoveRecipientMention();
             var text = turnContext.Activity.Text.Trim().ToLower();
 
-            if (text.Contains("mention me"))
-                await MentionAdaptiveCardActivityAsync(turnContext, cancellationToken);
-            else if (text.Contains("mention"))
+             if (text.Contains("mention"))
                 await MentionActivityAsync(turnContext, cancellationToken);
             else if(text.Contains("who"))
                 await GetSingleMemberAsync(turnContext, cancellationToken);
@@ -76,10 +75,14 @@ namespace Microsoft.BotBuilderSamples.Bots
         private MessagingExtensionActionResponse ShareMessageCommand(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action)
         {
             // The user has chosen to share a message by choosing the 'Share Message' context menu command.
+
+
+            //ReminderCreateModel model =
+                //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
             var heroCard = new HeroCard
             {
-                Title = $"{action.MessagePayload.From?.User?.DisplayName} orignally sent this message:",
-                Text = action.MessagePayload.Body.Content,
+                Title = $"{action.MessagePayload.From?.User?.DisplayName} Your message is scheduled for later time:",
+                Text = action.MessagePayload.Body.Content + action.MessagePayload.LinkToMessage,
             };
 
             if (action.MessagePayload.Attachments != null && action.MessagePayload.Attachments.Count > 0)
@@ -306,7 +309,7 @@ namespace Microsoft.BotBuilderSamples.Bots
 
             await turnContext.UpdateActivityAsync(activity, cancellationToken);
         }
-
+/*
         private async Task MentionAdaptiveCardActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             var member = new TeamsChannelAccount();
@@ -344,7 +347,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             };
             await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
         }
-
+*/
         private async Task MentionActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             var mention = new Mention
