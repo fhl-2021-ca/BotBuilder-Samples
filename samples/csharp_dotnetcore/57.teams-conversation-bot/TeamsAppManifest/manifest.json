@@ -1,66 +1,141 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.5/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.5",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.11/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.11",
   "version": "1.0.0",
-  "id": "<<YOUR-MICROSOFT-APP-ID>>",
-  "packageName": "com.teams.sample.teamsconversationbot",
+  "showLoadingIndicator": true,
+  "id": "540bd0aa-6f46-407d-8906-9483cca81fdf",
+  "packageName": "com.microsoft.teams.TeamsReminder",
   "developer": {
-    "name": "teamsConversationBot",
-    "websiteUrl": "https://www.microsoft.com",
-    "privacyUrl": "https://www.teams.com/privacy",
-    "termsOfUseUrl": "https://www.teams.com/termsofuser"
+    "name": "https://microsoft.com",
+    "websiteUrl": "https://microsoft.com",
+    "privacyUrl": "https://microsoft.com/privacy",
+    "termsOfUseUrl": "https://microsoft.com/tou"
   },
   "icons": {
-    "outline": "icon-outline.png",
-    "color": "icon-color.png"
+    "color": "color.png",
+    "outline": "outline.png"
   },
   "name": {
-    "short": "TeamsConversationBot",
-    "full": "TeamsConversationBot"
+    "short": "TeamsReminder",
+    "full": ""
   },
   "description": {
-    "short": "TeamsConversationBot",
-    "full": "TeamsConversationBot"
+    "short": "Rind yourself",
+    "full": "et reminders on message or just simply create a TODO task"
   },
   "accentColor": "#FFFFFF",
+  "staticTabs": [
+    {
+      "entityId": "conversations",
+      "scopes": [
+        "personal"
+      ]
+    },
+    {
+      "entityId": "about",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
   "bots": [
     {
-      "botId": "<<YOUR-MICROSOFT-APP-ID>>",
+      "botId": "6ef0591f-dcbd-43a5-a27f-094e682abc63",
       "scopes": [
         "personal",
-        "groupchat",
-        "team"
+        "team",
+        "groupchat"
       ],
-      "supportsFiles": false,
-      "isNotificationOnly": false,
       "commandLists": [
         {
           "scopes": [
-            "personal",
-            "groupchat",
+            "personal"
+          ],
+          "commands": [
+            {
+              "title": "ListReminders",
+              "description": "List all the reminders you have currently set"
+            },
+            {
+              "title": "RemindMeLater",
+              "description": "Set a TODO remider for yourself"
+            }
+          ]
+        },
+        {
+          "scopes": [
             "team"
           ],
           "commands": [
             {
-              "title": "MentionMe",
-              "description": "Sends message with @mention of the sender"
+              "title": "ListReminders",
+              "description": "List all the reminders you have currently set"
             },
             {
-              "title": "Show Welcome",
-              "description": "Shows the welcome card"
+              "title": "RemindMeLater",
+              "description": "Set a TODO remider for yourself"
+            }
+          ]
+        },
+        {
+          "scopes": [
+            "groupchat"
+          ],
+          "commands": [
+            {
+              "title": "ListReminders",
+              "description": "List all the reminders you have currently set"
             },
             {
-              "title": "MessageAllMembers",
-              "description": "Send 1 to 1 message to all members of the current conversation"
+              "title": "RemindMeLater",
+              "description": "Set a TODO remider for yourself"
             }
           ]
         }
-      ]
+      ],
+      "supportsFiles": true,
+      "isNotificationOnly": false
     }
+  ],
+  "composeExtensions": [
+    {
+      "botId": "6ef0591f-dcbd-43a5-a27f-094e682abc63",
+      "canUpdateConfiguration": true,
+      "commands": [
+        {
+          "id": "RemindMeLater",
+          "type": "action",
+          "context": [ "message" ],
+          "description": "Command to run action to create a Card from Compose Box",
+          "title": "Create Card"
+        },
+        {
+          "id": "shareMessage",
+          "type": "action",
+          "context": [ "message" ],
+          "description": "Test command to run action on message context (message sharing)",
+          "title": "Share Message",
+          "parameters": [
+            {
+              "name": "includeImage",
+              "title": "Include Image",
+              "description": "Include image in Hero Card",
+              "inputType": "toggle"
+            }
+          ]
+        }
+
+    }
+
+
+  ]
+}
   ],
   "permissions": [
     "identity",
     "messageTeamMembers"
   ],
-  "validDomains": []
+  "validDomains": [
+    "*.example.com"
+  ]
 }
