@@ -35,7 +35,7 @@
   ],
   "bots": [
     {
-      "botId": "6ef0591f-dcbd-43a5-a27f-094e682abc63",
+      "botId": "842db00b-3408-4b6a-86d7-19e1ca6e0624",
       "scopes": [ "personal", "team", "groupchat" ],
       "commandLists": [
         {
@@ -84,10 +84,10 @@
   ],
   "composeExtensions": [
     {
-      "botId": "6ef0591f-dcbd-43a5-a27f-094e682abc63",
+      "botId": "842db00b-3408-4b6a-86d7-19e1ca6e0624",
       "commands": [
         {
-          "id": "RemindMeLater",
+          "id": "NewCommand",
           "type": "action",
           "title": "comand",
           "description": "",
@@ -99,6 +99,24 @@
               "name": "param",
               "title": "param",
               "description": "",
+              "choices": []
+            }
+          ]
+        },
+        {
+          "id": "RemindMeLater",
+          "type": "action",
+          "title": "RemindMeLater",
+          "description": "RemindMeLater",
+          "initialRun": true,
+          "fetchTask": false,
+          "context": [ "commandBox", "message" ],
+          "parameters": [
+            {
+              "name": "paramName",
+              "title": "paramTitle",
+              "description": "description",
+              "inputType": "Date",
               "choices": []
             }
           ]
