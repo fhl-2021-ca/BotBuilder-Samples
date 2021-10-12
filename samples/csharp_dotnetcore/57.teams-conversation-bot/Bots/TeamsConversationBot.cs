@@ -27,14 +27,28 @@ namespace Microsoft.BotBuilderSamples.Bots
     {
         private string _appId;
         private string _appPassword;
-
-
+        private IDictionary<int, MessageModel> remindersStore = new Dictionary<int, MessageModel>();
+        int reminderId = 0;
+        private static MessageModel previousmessage = null;
 
         public TeamsConversationBot(IConfiguration config)
         {
             _appId = config["MicrosoftAppId"];
             _appPassword = config["MicrosoftAppPassword"];
+            reminderId++;
+            remindersStore.Add(reminderId, new MessageModel
+            {
+                text = "Please review the design document",
+                date = "20-10-2021 10:30:52 AM"
+            });
+            reminderId++;
+            remindersStore.Add(reminderId, new MessageModel
+            {
+                text = "Please review the PR",
+                date = "20-11-2021"
+            });
         }
+            
 
         private readonly string _adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
 
@@ -49,8 +63,8 @@ namespace Microsoft.BotBuilderSamples.Bots
 
                 if (text.Contains("remindmelater"))
                     await SendReminderSetMessage(turnContext, cancellationToken);
-                else if (text.Contains("who"))
-                    await GetSingleMemberAsync(turnContext, cancellationToken);
+                else if (text.Contains("listreminders"))
+                    await ListAllReminders(turnContext, cancellationToken);
                 else if (text.Contains("update"))
                     await CardActivityAsync(turnContext, true, cancellationToken);
                 else if (text.Contains("message"))
@@ -60,9 +74,25 @@ namespace Microsoft.BotBuilderSamples.Bots
                 else
                     await CardActivityAsync(turnContext, false, cancellationToken);
             }
+            // Special case : Here, when we create reminder using extension and press enter, we will reach here... just send the card back for previous message
+            else
+            {
+                var activity = (Activity)GetCardForNewReminder(previousmessage.text);
+                await turnContext.SendActivityAsync(activity, cancellationToken);
+            }
         }
 
+        private async Task ListAllReminders(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            var activity = new Activity();
+            foreach (KeyValuePair<int, MessageModel> entry in remindersStore)
+            {
+                // do something with entry.Value or entry.Key
+                activity = (Activity) GetCardForNewReminder(entry.Value.text.ToString());
+               await turnContext.SendActivityAsync(activity, cancellationToken);
 
+            }
+        }
 
         protected override async Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionSubmitActionAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
         {
@@ -92,6 +122,16 @@ namespace Microsoft.BotBuilderSamples.Bots
                 Title = $"The message is scheduled for later time: {time}",
                 Text = action.MessagePayload.Body.Content,
             };
+
+            previousmessage = new MessageModel
+            {
+                text = action.MessagePayload.Body.Content,
+                link = messageLink,
+                date = time
+            };
+
+            reminderId++;
+            remindersStore.Add(reminderId, previousmessage);
 
             var Buttons = new List<CardAction> { new CardAction(ActionTypes.OpenUrl, "View Original Message", value: messageLink) };
             heroCard.Buttons = Buttons;
@@ -140,6 +180,9 @@ namespace Microsoft.BotBuilderSamples.Bots
             string input = turnContext.Activity.Text.Trim().ToLower();
             string outputString = input.Replace("RemindMeLater ", "");
              outputString = outputString.Replace("remindmelater ", "");
+            reminderId++;
+            remindersStore.Add(reminderId, new MessageModel { text =  outputString });
+
             var heroCard = new HeroCard
             {
                 Title = $"Reminder has been scheduled!",
