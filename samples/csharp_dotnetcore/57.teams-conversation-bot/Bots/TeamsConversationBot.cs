@@ -19,6 +19,7 @@ using Newtonsoft.Json.Linq;
 using AdaptiveCards.Templating;
 using System.Text.Json;
 using Teams.Conversation.Bot;
+using AdaptiveCards;
 
 namespace Microsoft.BotBuilderSamples.Bots
 {
@@ -26,6 +27,8 @@ namespace Microsoft.BotBuilderSamples.Bots
     {
         private string _appId;
         private string _appPassword;
+
+
 
         public TeamsConversationBot(IConfiguration config)
         {
@@ -38,21 +41,28 @@ namespace Microsoft.BotBuilderSamples.Bots
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             turnContext.Activity.RemoveRecipientMention();
-            var text = turnContext.Activity.Text.Trim().ToLower();
+            var conversationId = turnContext.Activity.Conversation.Id;
+            var tenantId = turnContext.Activity.Conversation.TenantId;
+            if (turnContext.Activity.Text != null)
+            {
+                var text = turnContext.Activity.Text.Trim().ToLower();
 
-             if (text.Contains("remindmelater"))
-                await SendReminderSetMessage(turnContext, cancellationToken);
-            else if(text.Contains("who"))
-                await GetSingleMemberAsync(turnContext, cancellationToken);
-            else if(text.Contains("update"))
-                await CardActivityAsync(turnContext, true, cancellationToken);
-            else if(text.Contains("message"))
-                await MessageAllMembersAsync(turnContext, cancellationToken);
-            else if(text.Contains("delete"))
-                await DeleteCardActivityAsync(turnContext, cancellationToken);
-            else
-                await CardActivityAsync(turnContext, false, cancellationToken);
+                if (text.Contains("remindmelater"))
+                    await SendReminderSetMessage(turnContext, cancellationToken);
+                else if (text.Contains("who"))
+                    await GetSingleMemberAsync(turnContext, cancellationToken);
+                else if (text.Contains("update"))
+                    await CardActivityAsync(turnContext, true, cancellationToken);
+                else if (text.Contains("message"))
+                    await MessageAllMembersAsync(turnContext, cancellationToken);
+                else if (text.Contains("delete"))
+                    await DeleteCardActivityAsync(turnContext, cancellationToken);
+                else
+                    await CardActivityAsync(turnContext, false, cancellationToken);
+            }
         }
+
+
 
         protected override async Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionSubmitActionAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
         {
@@ -61,18 +71,13 @@ namespace Microsoft.BotBuilderSamples.Bots
                 //case "createCard":
                 //  return CreateCardCommand(turnContext, action);
                 case "RemindMeLater":
-                    return ShareMessageCommand(turnContext, action);
-                    /*                case "webView":
-                                        return WebViewResponse(turnContext, action);
-                                    case "createAdaptiveCard":
-                                        return CreateAdaptiveCardResponse(turnContext, action);
-                    */                //case "razorView":
-                                      //  return RazorViewResponse(turnContext, action);
+                    return RemindMeLaterMessageExtension(turnContext, action);
+
             }
             return new MessagingExtensionActionResponse();
         }
 
-        private MessagingExtensionActionResponse ShareMessageCommand(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action)
+        private MessagingExtensionActionResponse RemindMeLaterMessageExtension(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action)
         {
             // The user has chosen to share a message by choosing the 'Share Message' context menu command.
 
@@ -80,19 +85,17 @@ namespace Microsoft.BotBuilderSamples.Bots
             //ReminderCreateModel model =
             //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
 
-            //((JObject)action.Data)["includeImage"]?.ToString()
+            var time = ((JObject)action.Data)["paramName"]?.ToString();
+            var messageLink = action.MessagePayload.LinkToMessage;
             var heroCard = new HeroCard
             {
-                Title = $"{action.MessagePayload.From?.User?.DisplayName} Your message is scheduled for later time:",
-                Text = action.MessagePayload.Body.Content + action.MessagePayload.LinkToMessage,
+                Title = $"The message is scheduled for later time: {time}",
+                Text = action.MessagePayload.Body.Content,
             };
 
-            if (action.MessagePayload.Attachments != null && action.MessagePayload.Attachments.Count > 0)
-            {
-                // This sample does not add the MessagePayload Attachments.  This is left as an
-                // exercise for the user.
-                heroCard.Subtitle = $"({action.MessagePayload.Attachments.Count} Attachments not included)";
-            }
+            var Buttons = new List<CardAction> { new CardAction(ActionTypes.OpenUrl, "View Original Message", value: messageLink) };
+            heroCard.Buttons = Buttons;
+
 
             // This Messaging Extension example allows the user to check a box to include an image with the
             // shared message.  This demonstrates sending custom parameters along with the message payload.
@@ -104,6 +107,8 @@ namespace Microsoft.BotBuilderSamples.Bots
                     new CardImage { Url = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtB3AwMUeNoq4gUBGe6Ocj8kyh3bXa9ZbV7u1fVKQoyKFHdkqU" },
                 };
             }
+
+            SendReminderHack(action.MessagePayload.Body.Content.ToString(), turnContext, new CancellationToken());
 
             return new MessagingExtensionActionResponse
             {
@@ -124,6 +129,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             };
         }
 
+
         private async Task SendReminderSetMessage(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             // The user has chosen to share a message by choosing the 'Share Message' context menu command.
@@ -132,7 +138,8 @@ namespace Microsoft.BotBuilderSamples.Bots
             //ReminderCreateModel model =
             //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
             string input = turnContext.Activity.Text.Trim().ToLower();
-            string outputString = input.Replace("RemindMeLater", "");
+            string outputString = input.Replace("RemindMeLater ", "");
+             outputString = outputString.Replace("remindmelater ", "");
             var heroCard = new HeroCard
             {
                 Title = $"Reminder has been scheduled!",
@@ -142,6 +149,9 @@ namespace Microsoft.BotBuilderSamples.Bots
             var activity = MessageFactory.Attachment(heroCard.ToAttachment());
 
             await turnContext.SendActivityAsync(activity, cancellationToken);
+
+            Thread.Sleep(5000);
+            await SendReminderHack(outputString, turnContext, cancellationToken);
 
 /*            return new MessagingExtensionActionResponse
             {
@@ -162,6 +172,56 @@ namespace Microsoft.BotBuilderSamples.Bots
             };
 */        }
 
+        private void SendReminderHack(string outputString, ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
+        {
+            var activity = GetCardForNewReminder(outputString);
+            // Echo back what the user said
+            turnContext.SendActivityAsync(activity, cancellationToken);
+        }
+
+        protected async Task SendReminderHack(string outputString, ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            var activity = GetCardForNewReminder(outputString);
+            // Echo back what the user said
+            await turnContext.SendActivityAsync(activity, cancellationToken);
+        }
+
+        protected IMessageActivity GetCardForNewReminder(String message)
+        {
+
+            var card = new HeroCard();
+
+            card.Title = "You asked me to remind!!";
+            card.Text = message;
+
+            card.Buttons = new List<CardAction>();
+
+
+            card.Buttons.Add(new CardAction
+            {
+                Type = ActionTypes.MessageBack,
+                Title = "Snooze",
+                Text = "Snooze"
+            });
+
+            card.Buttons.Add(new CardAction
+            {
+                Type = ActionTypes.MessageBack,
+                Title = "View Message",
+                Text = "ViewMessage"
+            });
+
+            card.Buttons.Add(new CardAction
+            {
+                Type = ActionTypes.MessageBack,
+                Title = "Done",
+                Text = "Delete reminder"
+            });
+
+            var activity = MessageFactory.Attachment(card.ToAttachment());
+            return activity;
+
+        }
 
 
         protected override async Task OnTeamsMembersAddedAsync(IList<TeamsChannelAccount> membersAdded, TeamInfo teamInfo, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
