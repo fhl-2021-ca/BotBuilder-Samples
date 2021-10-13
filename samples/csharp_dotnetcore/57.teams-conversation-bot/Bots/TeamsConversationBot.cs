@@ -22,13 +22,14 @@ using Teams.Conversation.Bot;
 using AdaptiveCards;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.BotBuilderSamples.Bots
 {
     public class TeamsConversationBot : TeamsActivityHandler
     {
         private string _appId;
-        private string _appPassword;
+        private static string _appPassword;
         private IDictionary<int, MessageModel> remindersStore = new Dictionary<int, MessageModel>();
         private IDictionary<string, string> remindersValues = new Dictionary<string, string>();
         int reminderId = 0;
@@ -128,7 +129,6 @@ namespace Microsoft.BotBuilderSamples.Bots
                 // do something with entry.Value or entry.Key
                 activity = (Activity) GetCardForNewReminder(entry.Value.text.ToString());
                await turnContext.SendActivityAsync(activity, cancellationToken);
-
             }
         }
 
@@ -229,13 +229,25 @@ namespace Microsoft.BotBuilderSamples.Bots
             string input = turnContext.Activity.Text.Trim().ToLower();
             string outputString = input.Replace("RemindMeLater ", "");
              outputString = outputString.Replace("remindmelater ", "");
+
+            string pat = @"(\/[0-9])(.*)";
+
+            // Instantiate the regular expression object.
+            Regex r = new Regex(pat, RegexOptions.IgnoreCase);
+
+            // Match the regular expression pattern against a text string.
+            Match m = r.Match(outputString);
+            string timeSnooze = m.Groups[1].Value.Replace("/", "");
+            string message = m.Groups[2].Value;
+
+
             reminderId++;
-            remindersStore.Add(reminderId, new MessageModel { text =  outputString });
+            remindersStore.Add(reminderId, new MessageModel { text =  message });
 
             var heroCard = new HeroCard
             {
-                Title = $"Reminder has been scheduled!",
-                Text = outputString,
+                Title = $"Reminder has been scheduled for {timeSnooze} seconds!",
+                Text = message,
             };
 
             var activity = MessageFactory.Attachment(heroCard.ToAttachment());
@@ -243,26 +255,9 @@ namespace Microsoft.BotBuilderSamples.Bots
             await turnContext.SendActivityAsync(activity, cancellationToken);
 
             Thread.Sleep(5000);
-            await SendReminderHack(outputString, turnContext, cancellationToken);
+            await SendReminderHack(message, turnContext, cancellationToken);
 
-/*            return new MessagingExtensionActionResponse
-            {
-                ComposeExtension = new MessagingExtensionResult
-                {
-                    Type = "result",
-                    AttachmentLayout = "list",
-                    Attachments = new List<MessagingExtensionAttachment>()
-                    {
-                        new MessagingExtensionAttachment
-                        {
-                            Content = heroCard,
-                            ContentType = HeroCard.ContentType,
-                            Preview = heroCard.ToAttachment(),
-                        },
-                    },
-                },
-            };
-*/        }
+        }
 
         private void SendReminderHack(string outputString, ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
         {
