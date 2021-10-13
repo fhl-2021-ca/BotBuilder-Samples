@@ -20,6 +20,8 @@ using AdaptiveCards.Templating;
 using System.Text.Json;
 using Teams.Conversation.Bot;
 using AdaptiveCards;
+using System.Net.Http;
+using System.Text;
 
 namespace Microsoft.BotBuilderSamples.Bots
 {
@@ -61,7 +63,13 @@ namespace Microsoft.BotBuilderSamples.Bots
             {
                 var text = turnContext.Activity.Text.Trim().ToLower();
 
-                if (text.Contains("remindmelater"))
+/*                if (text.Contains("SaveToOneNote"))
+                {
+                    System.Console.WriteLine("############Calling SaveToOneNote");
+                    var text2 = turnContext.Activity.Text.Trim().ToLower();
+                    await SendMessageToOneNoteAsync(text2);
+                }
+                else */if (text.Contains("remindmelater"))
                     await SendReminderSetMessage(turnContext, cancellationToken);
                 else if (text.Contains("listreminders"))
                     await ListAllReminders(turnContext, cancellationToken);
@@ -80,6 +88,30 @@ namespace Microsoft.BotBuilderSamples.Bots
                 var activity = (Activity)GetCardForNewReminder(previousmessage.text);
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             }
+        }
+
+        private async Task SendMessageToOneNoteAsync(string text, string heading)
+        {
+            string token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6Ijg1RzlENHJ1U1NJV0g1VTFMSG85TzRDcWY2Q05YQmxPQkJHUXE5R3gta0UiLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0MTI5NjgxLCJuYmYiOjE2MzQxMjk2ODEsImV4cCI6MTYzNDEzMzU4MSwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkFTUUEyLzhUQUFBQXpLazlNRFV3cFowRzNGQ0RUVXFBUHNwd3FZWEIwWTUydHJBa3hNYlpaNkU9IiwiYW1yIjpbInB3ZCJdLCJhcHBfZGlzcGxheW5hbWUiOiJHcmFwaCBFeHBsb3JlciIsImFwcGlkIjoiZGU4YmM4YjUtZDlmOS00OGIxLWE4YWQtYjc0OGRhNzI1MDY0IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJnb3lhbCIsImdpdmVuX25hbWUiOiJhc2VlbSIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjQ5LjM2LjE4OC4xNDQiLCJuYW1lIjoiYXNlZW0gZ295YWwiLCJvaWQiOiJkYmRmZDQxZC05YThmLTRjMWYtYWMzMS1kYTM2Y2ZlNzZlYzkiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDE5MkZFQzAzOSIsInJoIjoiMC5BWEFBZU5TS0JNNmR4MEdxdjQ0dmFvM2xBclhJaTk3NTJiRklxSzIzU05weVVHUndBQ2cuIiwic2NwIjoiQXBwQ2F0YWxvZy5SZWFkLkFsbCBBcHBDYXRhbG9nLlJlYWRXcml0ZS5BbGwgQXBwQ2F0YWxvZy5TdWJtaXQgQ2hhdC5SZWFkIENoYXQuUmVhZFdyaXRlIENoYXRNZW1iZXIuUmVhZCBDaGF0TWVtYmVyLlJlYWRXcml0ZSBEaXJlY3RvcnkuUmVhZC5BbGwgRGlyZWN0b3J5LlJlYWRXcml0ZS5BbGwgTWFpbC5SZWFkQmFzaWMgTm90ZXMuQ3JlYXRlIE5vdGVzLlJlYWQgTm90ZXMuUmVhZFdyaXRlIE5vdGVzLlJlYWRXcml0ZS5BbGwgb3BlbmlkIHByb2ZpbGUgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZEZvclVzZXIgVXNlci5SZWFkIGVtYWlsIiwic2lnbmluX3N0YXRlIjpbImttc2kiXSwic3ViIjoiQzJCSFh6LTNScHFRaGlPcHplNncydGpfUkI4TXpJdkNDUk12TlYySXBtdyIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJBUyIsInRpZCI6IjA0OGFkNDc4LTlkY2UtNDFjNy1hYWJmLThlMmY2YThkZTUwMiIsInVuaXF1ZV9uYW1lIjoiYXNlZW1AZ295YWxkZW1vLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImFzZWVtQGdveWFsZGVtby5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJ0UGk5MEZXSkRVYTJsU3F5WVVpdUFRIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX3N0Ijp7InN1YiI6ImxSRXZfUDFPR1l5WGlIbEVSSTdZemtfQ1NIUEtvREVjZWZQS2wxUVBramsifSwieG1zX3RjZHQiOjE2MzM1MjYxMDJ9.kKP8rjPPrzEW6GYeBxY6HtZKywP8DLDMK29Gvmf6F9O5lt1webX0qQpRxVlmMWi9l8mCz7tq05q3k-A-zfSSPVmAnFTIjnSpRRP3b2C1gqUnPIYwiV81Bf60s-PxV0uKmxjMkNdDZ5BhFMk2NMiRYJLJUjiyx-aOgREmK_kn5HM9_bD8Op9rsKzF_b9L0tpWV8JnlcIB0yXMb2nKqAjejel4tVrJ5lb95ZpGhbTC3trOO0eOd_UthgStvBYD-vLrdJZEYXLa0uHVwAzx2pidS_m2eiD6iHBCYykxFC6V98GdlFrni9zk93wOZku3KV8-6WwdWhT2ZDQzPuBYlFsJ6Q";
+            using (var client = new HttpClient())
+            {
+                string inputMsg = text;//turnContext.Activity.Text.Trim().ToLower();
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                using (var content = new MultipartFormDataContent("MyPartBoundary198374"))
+                {
+                    var stringContent = new StringContent(text, Encoding.UTF8, "text/html");
+                    content.Add(stringContent, "Presentation");
+                    content.Add(stringContent, "Presentation");
+
+                    using (
+                        var message =
+                           await client.PostAsync("https://graph.microsoft.com/v1.0/me/onenote/sections/1-fc511081-61b5-4e46-b84d-3accb8ba4872/pages", content))
+                    {
+                        Console.WriteLine(message.StatusCode);
+                    }
+                }
+            }
+
         }
 
         private async Task ListAllReminders(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
@@ -102,6 +134,11 @@ namespace Microsoft.BotBuilderSamples.Bots
                 //  return CreateCardCommand(turnContext, action);
                 case "RemindMeLater":
                     return RemindMeLaterMessageExtension(turnContext, action);
+                case "SaveToOneDrive":
+                    var heading = ((JObject)action.Data)["Save"]?.ToString();
+                    var text2 = action.MessagePayload.Body.Content;
+                    await SendMessageToOneNoteAsync(text2, heading);
+                    return new MessagingExtensionActionResponse();
 
             }
             return new MessagingExtensionActionResponse();
