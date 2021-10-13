@@ -121,6 +121,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             {
                 Title = $"The message is scheduled for later time: {time}",
                 Text = action.MessagePayload.Body.Content,
+                Subtitle = messageLink.ToString()
             };
 
             previousmessage = new MessageModel
