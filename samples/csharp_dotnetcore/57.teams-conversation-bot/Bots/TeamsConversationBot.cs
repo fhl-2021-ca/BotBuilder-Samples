@@ -30,6 +30,7 @@ namespace Microsoft.BotBuilderSamples.Bots
         private string _appId;
         private string _appPassword;
         private IDictionary<int, MessageModel> remindersStore = new Dictionary<int, MessageModel>();
+        private IDictionary<string, string> remindersValues = new Dictionary<string, string>();
         int reminderId = 0;
         private static MessageModel previousmessage = null;
 
@@ -49,6 +50,11 @@ namespace Microsoft.BotBuilderSamples.Bots
                 text = "Please review the PR",
                 date = "20-11-2021"
             });
+
+            remindersValues.Add("1", "5 seconds");
+            remindersValues.Add("2", "1 hours");
+            remindersValues.Add("3", "3 hours");
+
         }
             
 
@@ -134,6 +140,8 @@ namespace Microsoft.BotBuilderSamples.Bots
                 //  return CreateCardCommand(turnContext, action);
                 case "RemindMeLater":
                     return RemindMeLaterMessageExtension(turnContext, action);
+                case "RemindMeLater2":
+                    return RemindMeLaterMessageExtension(turnContext, action);
                 case "SaveToOneDrive":
                     var heading = ((JObject)action.Data)["Save"]?.ToString();
                     var text2 = action.MessagePayload.Body.Content;
@@ -152,11 +160,14 @@ namespace Microsoft.BotBuilderSamples.Bots
             //ReminderCreateModel model =
             //JsonSerializer.Deserialize<ReminderCreateModel>(JsonSerializer.Serialize(action.Data));
 
-            var time = ((JObject)action.Data)["paramName"]?.ToString();
+            var id = ((JObject)action.Data)["RemindAfter"]?.ToString();
+
+            string timeSnooze = null;
+            var time = remindersValues.TryGetValue(id, out timeSnooze);
             var messageLink = action.MessagePayload.LinkToMessage;
             var heroCard = new HeroCard
             {
-                Title = $"The message is scheduled for later time: {time}",
+                Title = $"The message is scheduled for later time: {timeSnooze}",
                 Text = action.MessagePayload.Body.Content,
                 Subtitle = messageLink.ToString()
             };
@@ -165,7 +176,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             {
                 text = action.MessagePayload.Body.Content,
                 link = messageLink,
-                date = time
+                date = timeSnooze
             };
 
             reminderId++;

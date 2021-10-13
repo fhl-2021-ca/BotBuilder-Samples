@@ -15,8 +15,8 @@
     "termsOfUseUrl": "https://microsoft.com/tou"
   },
   "description": {
-    "short": "Rind yourself",
-    "full": "et reminders on message or just simply create a TODO task"
+    "short": "Rindyourself",
+    "full": "etremindersonmessageorjustsimplycreateaTODOtask"
   },
   "icons": {
     "outline": "outline.png",
@@ -42,11 +42,11 @@
           "commands": [
             {
               "title": "ListReminders",
-              "description": "List all the reminders you have currently set"
+              "description": "Listalltheremindersyouhavecurrentlyset"
             },
             {
               "title": "RemindMeLater",
-              "description": "Set a TODO remider for yourself"
+              "description": "SetaTODOremiderforyourself"
             }
           ],
           "scopes": [ "personal" ]
@@ -55,11 +55,11 @@
           "commands": [
             {
               "title": "ListReminders",
-              "description": "List all the reminders you have currently set"
+              "description": "Listalltheremindersyouhavecurrentlyset"
             },
             {
               "title": "RemindMeLater",
-              "description": "Set a TODO remider for yourself"
+              "description": "SetaTODOremiderforyourself"
             }
           ],
           "scopes": [ "team" ]
@@ -68,11 +68,11 @@
           "commands": [
             {
               "title": "ListReminders",
-              "description": "List all the reminders you have currently set"
+              "description": "Listalltheremindersyouhavecurrentlyset"
             },
             {
               "title": "RemindMeLater",
-              "description": "Set a TODO remider for yourself"
+              "description": "SetaTODOremiderforyourself"
             }
           ],
           "scopes": [ "groupchat" ]
@@ -118,6 +118,55 @@
               "description": "description",
               "inputType": "Date",
               "choices": []
+            }
+          ]
+        },
+        {
+          "id": "Test",
+          "type": "action",
+          "title": "Test",
+          "description": "bbb",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [ "commandBox", "compose", "message" ],
+          "parameters": [
+            {
+              "name": "param",
+              "title": "param",
+              "description": "param",
+              "inputType": "Time",
+              "choices": []
+            }
+          ]
+        },
+        {
+          "id": "RemindMeLater2",
+          "type": "action",
+          "title": "RemindMeLater2",
+          "description": "RemindMeLater",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [ "commandBox", "compose", "message" ],
+          "parameters": [
+            {
+              "name": "RemindAfter",
+              "title": "Remindlater",
+              "description": "Remindlater",
+              "inputType": "ChoiceSet",
+              "choices": [
+                {
+                  "title": "5 seconds",
+                  "value": "1"
+                },
+                {
+                  "title": "1 hor",
+                  "value": "2"
+                },
+                {
+                  "title": "3 hours",
+                  "value": "3"
+                }
+              ]
             }
           ]
         }
