@@ -143,9 +143,10 @@ namespace Microsoft.BotBuilderSamples.Bots
                 case "RemindMeLater2":
                     return RemindMeLaterMessageExtension(turnContext, action);
                 case "SaveToOneDrive":
-                    var heading = ((JObject)action.Data)["Save"]?.ToString();
+                    var sectionAndHeadingheading = ((JObject)action.Data)["Save"]?.ToString();
+                    var groups = sectionAndHeadingheading.Split("/", 3);
                     var text2 = action.MessagePayload.Body.Content;
-                    await SendMessageToOneNoteAsync(text2, heading);
+                    await SendMessageToOneNoteAsync(text2, groups[1]);
                     return new MessagingExtensionActionResponse();
 
             }
