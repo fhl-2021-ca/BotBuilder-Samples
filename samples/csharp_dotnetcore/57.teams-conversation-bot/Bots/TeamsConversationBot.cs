@@ -93,7 +93,7 @@ namespace Microsoft.BotBuilderSamples.Bots
                 if (text.Equals("scheduleMessageLater --help"))
                     await turnContext.SendActivityAsync(MessageFactory.Text(infoText, infoText), cancellationToken);
 
-                else if (text.Contains("scheduleMessageLater"))
+                else if (text.Contains("schedulemessagelater"))
                     await ScheduleMessageLater(turnContext, cancellationToken, text);
                 else if (text.Contains("remindmelater"))
                     await SendReminderSetMessage(turnContext, cancellationToken);
@@ -246,15 +246,21 @@ namespace Microsoft.BotBuilderSamples.Bots
 
         private async Task SendMessageToOneNoteAsync(string text, string heading)
         {
-            string token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6Ijg1RzlENHJ1U1NJV0g1VTFMSG85TzRDcWY2Q05YQmxPQkJHUXE5R3gta0UiLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0MTI5NjgxLCJuYmYiOjE2MzQxMjk2ODEsImV4cCI6MTYzNDEzMzU4MSwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkFTUUEyLzhUQUFBQXpLazlNRFV3cFowRzNGQ0RUVXFBUHNwd3FZWEIwWTUydHJBa3hNYlpaNkU9IiwiYW1yIjpbInB3ZCJdLCJhcHBfZGlzcGxheW5hbWUiOiJHcmFwaCBFeHBsb3JlciIsImFwcGlkIjoiZGU4YmM4YjUtZDlmOS00OGIxLWE4YWQtYjc0OGRhNzI1MDY0IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJnb3lhbCIsImdpdmVuX25hbWUiOiJhc2VlbSIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjQ5LjM2LjE4OC4xNDQiLCJuYW1lIjoiYXNlZW0gZ295YWwiLCJvaWQiOiJkYmRmZDQxZC05YThmLTRjMWYtYWMzMS1kYTM2Y2ZlNzZlYzkiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDE5MkZFQzAzOSIsInJoIjoiMC5BWEFBZU5TS0JNNmR4MEdxdjQ0dmFvM2xBclhJaTk3NTJiRklxSzIzU05weVVHUndBQ2cuIiwic2NwIjoiQXBwQ2F0YWxvZy5SZWFkLkFsbCBBcHBDYXRhbG9nLlJlYWRXcml0ZS5BbGwgQXBwQ2F0YWxvZy5TdWJtaXQgQ2hhdC5SZWFkIENoYXQuUmVhZFdyaXRlIENoYXRNZW1iZXIuUmVhZCBDaGF0TWVtYmVyLlJlYWRXcml0ZSBEaXJlY3RvcnkuUmVhZC5BbGwgRGlyZWN0b3J5LlJlYWRXcml0ZS5BbGwgTWFpbC5SZWFkQmFzaWMgTm90ZXMuQ3JlYXRlIE5vdGVzLlJlYWQgTm90ZXMuUmVhZFdyaXRlIE5vdGVzLlJlYWRXcml0ZS5BbGwgb3BlbmlkIHByb2ZpbGUgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZEZvclVzZXIgVXNlci5SZWFkIGVtYWlsIiwic2lnbmluX3N0YXRlIjpbImttc2kiXSwic3ViIjoiQzJCSFh6LTNScHFRaGlPcHplNncydGpfUkI4TXpJdkNDUk12TlYySXBtdyIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJBUyIsInRpZCI6IjA0OGFkNDc4LTlkY2UtNDFjNy1hYWJmLThlMmY2YThkZTUwMiIsInVuaXF1ZV9uYW1lIjoiYXNlZW1AZ295YWxkZW1vLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImFzZWVtQGdveWFsZGVtby5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJ0UGk5MEZXSkRVYTJsU3F5WVVpdUFRIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX3N0Ijp7InN1YiI6ImxSRXZfUDFPR1l5WGlIbEVSSTdZemtfQ1NIUEtvREVjZWZQS2wxUVBramsifSwieG1zX3RjZHQiOjE2MzM1MjYxMDJ9.kKP8rjPPrzEW6GYeBxY6HtZKywP8DLDMK29Gvmf6F9O5lt1webX0qQpRxVlmMWi9l8mCz7tq05q3k-A-zfSSPVmAnFTIjnSpRRP3b2C1gqUnPIYwiV81Bf60s-PxV0uKmxjMkNdDZ5BhFMk2NMiRYJLJUjiyx-aOgREmK_kn5HM9_bD8Op9rsKzF_b9L0tpWV8JnlcIB0yXMb2nKqAjejel4tVrJ5lb95ZpGhbTC3trOO0eOd_UthgStvBYD-vLrdJZEYXLa0uHVwAzx2pidS_m2eiD6iHBCYykxFC6V98GdlFrni9zk93wOZku3KV8-6WwdWhT2ZDQzPuBYlFsJ6Q";
+            string token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6IlUyUk84aW9xUzJPenNBM3JibzBPYnhwVmJ5dmIzdk5WenctRHVySm1DZ1EiLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0MTk5OTI4LCJuYmYiOjE2MzQxOTk5MjgsImV4cCI6MTYzNDIwMzgyOCwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkFTUUEyLzhUQUFBQXBjTmhEb0NCSXRRVFRReHNsZWxkdHVWOCtOaUJOcTdCeHIxNGltSkwvdjA9IiwiYW1yIjpbInB3ZCJdLCJhcHBfZGlzcGxheW5hbWUiOiJHcmFwaCBFeHBsb3JlciIsImFwcGlkIjoiZGU4YmM4YjUtZDlmOS00OGIxLWE4YWQtYjc0OGRhNzI1MDY0IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJnb3lhbCIsImdpdmVuX25hbWUiOiJhc2VlbSIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjQ5LjM2LjE4OC4xNDQiLCJuYW1lIjoiYXNlZW0gZ295YWwiLCJvaWQiOiJkYmRmZDQxZC05YThmLTRjMWYtYWMzMS1kYTM2Y2ZlNzZlYzkiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDE5MkZFQzAzOSIsInJoIjoiMC5BWEFBZU5TS0JNNmR4MEdxdjQ0dmFvM2xBclhJaTk3NTJiRklxSzIzU05weVVHUndBQ2cuIiwic2NwIjoiQXBwQ2F0YWxvZy5SZWFkLkFsbCBBcHBDYXRhbG9nLlJlYWRXcml0ZS5BbGwgQXBwQ2F0YWxvZy5TdWJtaXQgQ2hhdC5SZWFkIENoYXQuUmVhZFdyaXRlIENoYXRNZW1iZXIuUmVhZCBDaGF0TWVtYmVyLlJlYWRXcml0ZSBEaXJlY3RvcnkuUmVhZC5BbGwgRGlyZWN0b3J5LlJlYWRXcml0ZS5BbGwgTWFpbC5SZWFkQmFzaWMgTm90ZXMuQ3JlYXRlIE5vdGVzLlJlYWQgTm90ZXMuUmVhZFdyaXRlIE5vdGVzLlJlYWRXcml0ZS5BbGwgb3BlbmlkIHByb2ZpbGUgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZEZvclVzZXIgVXNlci5SZWFkIGVtYWlsIiwic2lnbmluX3N0YXRlIjpbImttc2kiXSwic3ViIjoiQzJCSFh6LTNScHFRaGlPcHplNncydGpfUkI4TXpJdkNDUk12TlYySXBtdyIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJBUyIsInRpZCI6IjA0OGFkNDc4LTlkY2UtNDFjNy1hYWJmLThlMmY2YThkZTUwMiIsInVuaXF1ZV9uYW1lIjoiYXNlZW1AZ295YWxkZW1vLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImFzZWVtQGdveWFsZGVtby5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiIwT1drSzlFUUtrdW5OekI4QXVNakFBIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX3N0Ijp7InN1YiI6ImxSRXZfUDFPR1l5WGlIbEVSSTdZemtfQ1NIUEtvREVjZWZQS2wxUVBramsifSwieG1zX3RjZHQiOjE2MzM1MjYxMDJ9.TmyM_1kvu6z7QRyukm6GZ0EGrvQWXV2YioshU8h9acjyHKq3gz_Zlq_N5bu3s81dJtg29iq9fRpVJUZYu7DwT1GXnwQ7voljSkKa1AeppeNFrgDlkDXxgq4-a-n2WnJetxo_vusD-kbCw7WxIqOHH4OXCmVQM42yHYF1gOZeqjX6j6m3rJOQe-X0-OfqM5buRvNue4E_woSyg_lesUDJa8b-GUP_ZtG4LiekSg3nDkQVBn9pQI8wRz5pPHBEPVWBimmZricpnqLvMIx8NNKZdvGS6-32kNzM-t60ooL1Eeku5O2zpLYEV3egaVM2StW85NZGllwuB9b6FWmwCZpycg";
             using (var client = new HttpClient())
             {
                 string inputMsg = text;//turnContext.Activity.Text.Trim().ToLower();
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 using (var content = new MultipartFormDataContent("MyPartBoundary198374"))
                 {
-                    var stringContent = new StringContent("<html><head><title>" + heading + "</title></head>", Encoding.UTF8, "text/html");
-                    content.Add(stringContent, "<body>" + text + "</body></html>");
+                    var stringContent = new StringContent("<head><title>" + heading + "</title></head><body>" + text + "</body>", Encoding.UTF8, "text/html");
+
+                    //var stringContent = new StringContent("<html><body>" + text + "</body></html>", Encoding.UTF8, "text/html");
+                    //var stringContent = new StringContent("<html><body>" + text + "</body></html>", Encoding.UTF8, "text/html");
+//                    content.Add(stringContent, );
+                    content.Add(stringContent, "Presentation");
+
+                    //content.Add(stringContent, "<body>" + text + "</body></html>");
                     using (
                         var message =
                            await client.PostAsync("https://graph.microsoft.com/v1.0/me/onenote/sections/1-fc511081-61b5-4e46-b84d-3accb8ba4872/pages", content))
@@ -764,24 +770,6 @@ namespace Microsoft.BotBuilderSamples.Bots
             await turnContext.SendActivityAsync(MessageFactory.Text(replyText), cancellationToken);
         }
 
-
-        private async Task<string> GetChatIDFromAlias(string recipient)
-        {
-            var client = GetGraphClient();
-            var chats = await client.Me.Chats.Request().GetAsync();
-
-            //foreach (var chat in chats)
-            //{
-            //    var chatID = chat.Id;
-
-            //    var members = await client.Chats[chatID].Members
-            //                        .Request()
-            //                        .GetAsync();
-
-
-            //}
-            return chats.ToString();
-        }
 
         protected IMessageActivity GetCardForResponse(String message, string alias, string dateTimeString)
         {
