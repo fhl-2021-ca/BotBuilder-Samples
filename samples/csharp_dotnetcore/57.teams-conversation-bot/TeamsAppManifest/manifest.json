@@ -87,18 +87,45 @@
       "botId": "842db00b-3408-4b6a-86d7-19e1ca6e0624",
       "commands": [
         {
-          "id": "NewCommand",
+          "id": "scheduleMessage",
           "type": "action",
-          "title": "comand",
-          "description": "",
-          "initialRun": true,
-          "fetchTask": true,
-          "context": [ "message", "commandBox" ],
+          "title": "Schedule Message",
+          "description": "Send your message at a later time",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [
+            "compose",
+            "commandBox"
+          ],
           "parameters": [
             {
-              "name": "param",
-              "title": "param",
+              "name": "recipient",
+              "title": "Recipient Alias",
               "description": "",
+              "inputType": "text"
+            },
+            {
+              "name": "message",
+              "title": "Message Text",
+              "description": "",
+              "inputType": "text"
+            }
+          ]
+        },
+        {
+          "id": "SaveToOneDrive",
+          "type": "action",
+          "title": "Save To OneNote",
+          "description": "Save message to One Note",
+          "initialRun": true,
+          "fetchTask": false,
+          "context": [ "commandBox", "compose" ],
+          "parameters": [
+            {
+              "name": "Save",
+              "title": "One note location",
+              "description": "Save",
+              "inputType": "Text",
               "choices": []
             }
           ]
@@ -107,42 +134,6 @@
           "id": "RemindMeLater",
           "type": "action",
           "title": "RemindMeLater",
-          "description": "RemindMeLater",
-          "initialRun": true,
-          "fetchTask": false,
-          "context": [ "commandBox", "message" ],
-          "parameters": [
-            {
-              "name": "paramName",
-              "title": "paramTitle",
-              "description": "description",
-              "inputType": "Date",
-              "choices": []
-            }
-          ]
-        },
-        {
-          "id": "Test",
-          "type": "action",
-          "title": "Test",
-          "description": "bbb",
-          "initialRun": false,
-          "fetchTask": false,
-          "context": [ "commandBox", "compose", "message" ],
-          "parameters": [
-            {
-              "name": "param",
-              "title": "param",
-              "description": "param",
-              "inputType": "Time",
-              "choices": []
-            }
-          ]
-        },
-        {
-          "id": "RemindMeLater2",
-          "type": "action",
-          "title": "RemindMeLater2",
           "description": "RemindMeLater",
           "initialRun": false,
           "fetchTask": false,

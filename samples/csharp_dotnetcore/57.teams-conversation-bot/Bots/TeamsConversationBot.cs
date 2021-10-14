@@ -106,10 +106,8 @@ namespace Microsoft.BotBuilderSamples.Bots
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 using (var content = new MultipartFormDataContent("MyPartBoundary198374"))
                 {
-                    var stringContent = new StringContent(text, Encoding.UTF8, "text/html");
-                    content.Add(stringContent, "Presentation");
-                    content.Add(stringContent, "Presentation");
-
+                    var stringContent = new StringContent("<html><head><title>" + heading + "</title></head>", Encoding.UTF8, "text/html");
+                    content.Add(stringContent, "<body>" + text + "</body></html>");
                     using (
                         var message =
                            await client.PostAsync("https://graph.microsoft.com/v1.0/me/onenote/sections/1-fc511081-61b5-4e46-b84d-3accb8ba4872/pages", content))
@@ -148,7 +146,6 @@ namespace Microsoft.BotBuilderSamples.Bots
                     var text2 = action.MessagePayload.Body.Content;
                     await SendMessageToOneNoteAsync(text2, groups[1]);
                     return new MessagingExtensionActionResponse();
-
             }
             return new MessagingExtensionActionResponse();
         }
