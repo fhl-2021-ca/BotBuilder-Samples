@@ -23,6 +23,7 @@ using AdaptiveCards;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Microsoft.BotBuilderSamples.Bots
 {
@@ -34,11 +35,21 @@ namespace Microsoft.BotBuilderSamples.Bots
         private IDictionary<string, string> remindersValues = new Dictionary<string, string>();
         int reminderId = 0;
         private static MessageModel previousmessage = null;
+        public readonly string baseUrl;
+        public readonly string clientID;
+        public readonly string clientSecret;
+        public readonly string graphAPIToken;
+
 
         public TeamsConversationBot(IConfiguration config)
         {
             _appId = config["MicrosoftAppId"];
             _appPassword = config["MicrosoftAppPassword"];
+            this.baseUrl = config["BaseUrl"];
+            this.clientID = config["MicrosoftAppId"];
+            this.clientSecret = config["MicrosoftAppPassword"];
+            this.graphAPIToken = config["GraphAPIToken"];
+
             reminderId++;
             remindersStore.Add(reminderId, new MessageModel
             {
@@ -66,17 +77,25 @@ namespace Microsoft.BotBuilderSamples.Bots
             turnContext.Activity.RemoveRecipientMention();
             var conversationId = turnContext.Activity.Conversation.Id;
             var tenantId = turnContext.Activity.Conversation.TenantId;
+            var infoText = "Please specify in this format: scheduleMessageLater AliasName [Message] [DateTime]";
+
             if (turnContext.Activity.Text != null)
             {
                 var text = turnContext.Activity.Text.Trim().ToLower();
 
-/*                if (text.Contains("SaveToOneNote"))
-                {
-                    System.Console.WriteLine("############Calling SaveToOneNote");
-                    var text2 = turnContext.Activity.Text.Trim().ToLower();
-                    await SendMessageToOneNoteAsync(text2);
-                }
-                else */if (text.Contains("remindmelater"))
+                /*                if (text.Contains("SaveToOneNote"))
+                                {
+                                    System.Console.WriteLine("############Calling SaveToOneNote");
+                                    var text2 = turnContext.Activity.Text.Trim().ToLower();
+                                    await SendMessageToOneNoteAsync(text2);
+                                }
+                                else */
+                if (text.Equals("scheduleMessageLater --help"))
+                    await turnContext.SendActivityAsync(MessageFactory.Text(infoText, infoText), cancellationToken);
+
+                else if (text.Contains("scheduleMessageLater"))
+                    await ScheduleMessageLater(turnContext, cancellationToken, text);
+                else if (text.Contains("remindmelater"))
                     await SendReminderSetMessage(turnContext, cancellationToken);
                 else if (text.Contains("listreminders"))
                     await ListAllReminders(turnContext, cancellationToken);
@@ -96,6 +115,134 @@ namespace Microsoft.BotBuilderSamples.Bots
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             }
         }
+
+
+        private async Task ScheduleMessageLater(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken, string text)
+        {
+            string alias = text.Split(" ")[1].ToLower();
+            string message = text.Split('[')[1].Split(']')[0];
+            string dateTimeString = text.Split('[')[2].Split(']')[0];
+
+            //var replyText = $"**Message:** {message} {Environment.NewLine} **Scheduled at:** {dateTimeString} {Environment.NewLine} **To:** {alias}";
+            //await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
+            var responseCard = GetCardForResponse(message, alias, dateTimeString);
+            await turnContext.SendActivityAsync(responseCard, cancellationToken);
+
+            try
+            {
+                var chatID = GetChatIDFromAliasManual(alias);
+                Thread.Sleep(Int32.Parse(dateTimeString) * 1000);
+                dynamic response = SendMessageWithChatID(message, chatID);
+                Console.WriteLine(response.body.content);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"Message to {alias} has been sent!"), cancellationToken);
+            }
+            catch
+            {
+                await turnContext.SendActivityAsync(MessageFactory.Text($"Failed to send the message to {alias}."), cancellationToken);
+            }
+
+            //await turnContext.SendActivityAsync(MessageFactory.Text(chatID), cancellationToken);
+
+
+        }
+
+        private object GetObjectFromGraphAPI(string url)
+        {
+            dynamic response = null;
+            try
+            {
+                var webRequest = System.Net.WebRequest.Create(url);
+                if (webRequest != null)
+                {
+                    webRequest.Method = "GET";
+                    webRequest.Timeout = 12000;
+                    webRequest.ContentType = "application/json";
+                    //var token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6InV2empTbzUzeG8ycUlxV3VGWWVheTNTVThDaExDVkE4MGNDMi14NGk5YTQiLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0MTQyNTU5LCJuYmYiOjE2MzQxNDI1NTksImV4cCI6MTYzNDE0NjQ1OSwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkUyWmdZTmpSOHE2MThaclUrZ1p4bFlhWFhkMDZYZHYyWHplNm85UHZsTnJ2c2RUNWhoc0EiLCJhbXIiOlsicHdkIl0sImFwcF9kaXNwbGF5bmFtZSI6IkdyYXBoIEV4cGxvcmVyIiwiYXBwaWQiOiJkZThiYzhiNS1kOWY5LTQ4YjEtYThhZC1iNzQ4ZGE3MjUwNjQiLCJhcHBpZGFjciI6IjAiLCJmYW1pbHlfbmFtZSI6IksiLCJnaXZlbl9uYW1lIjoiUHJlZXRoYW0iLCJpZHR5cCI6InVzZXIiLCJpcGFkZHIiOiI1OS45Mi4xMzguNjMiLCJuYW1lIjoiUHJlZXRoYW0gSyIsIm9pZCI6IjY3MWUxMDdhLWUxMDctNDliNy05MmJjLTc0Zjk5NTIyMDIzYyIsInBsYXRmIjoiMyIsInB1aWQiOiIxMDAzMjAwMTk1MzgwOTAyIiwicmgiOiIwLkFYQUFlTlNLQk02ZHgwR3F2NDR2YW8zbEFyWElpOTc1MmJGSXFLMjNTTnB5VUdSd0FNOC4iLCJzY3AiOiJBcHBDYXRhbG9nLlJlYWQuQWxsIEFwcENhdGFsb2cuUmVhZFdyaXRlLkFsbCBBcHBDYXRhbG9nLlN1Ym1pdCBDaGF0LlJlYWQgQ2hhdC5SZWFkQmFzaWMgQ2hhdC5SZWFkV3JpdGUgQ2hhdE1lbWJlci5SZWFkIENoYXRNZW1iZXIuUmVhZFdyaXRlIERpcmVjdG9yeS5SZWFkLkFsbCBEaXJlY3RvcnkuUmVhZFdyaXRlLkFsbCBNYWlsLlJlYWRCYXNpYyBOb3Rlcy5DcmVhdGUgTm90ZXMuUmVhZCBOb3Rlcy5SZWFkV3JpdGUgTm90ZXMuUmVhZFdyaXRlLkFsbCBvcGVuaWQgcHJvZmlsZSBUZWFtc0FwcEluc3RhbGxhdGlvbi5SZWFkRm9yVXNlciBUZWFtc0FwcEluc3RhbGxhdGlvbi5SZWFkV3JpdGVGb3JVc2VyIFRlYW1zQXBwSW5zdGFsbGF0aW9uLlJlYWRXcml0ZVNlbGZGb3JVc2VyIFVzZXIuUmVhZCBlbWFpbCIsInNpZ25pbl9zdGF0ZSI6WyJrbXNpIl0sInN1YiI6IlU1RDFMa1ZvMnVHaUFmV2ZjTGExaGk4d2ZnOEoyYUpqV1JCZEM2S21QVGciLCJ0ZW5hbnRfcmVnaW9uX3Njb3BlIjoiQVMiLCJ0aWQiOiIwNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIiLCJ1bmlxdWVfbmFtZSI6InByZWV0aGFta0Bnb3lhbGRlbW8ub25taWNyb3NvZnQuY29tIiwidXBuIjoicHJlZXRoYW1rQGdveWFsZGVtby5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJiYXpZdEcyTzBVbXQycXFmSU5SQkFRIiwidmVyIjoiMS4wIiwid2lkcyI6WyIyOTIzMmNkZi05MzIzLTQyZmQtYWRlMi0xZDA5N2FmM2U0ZGUiLCI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJmMDIzZmQ4MS1hNjM3LTRiNTYtOTVmZC03OTFhYzAyMjYwMzMiLCI3Mjk4MjdlMy05YzE0LTQ5ZjctYmIxYi05NjA4ZjE1NmJiYjgiLCJmMjhhMWY1MC1mNmU3LTQ1NzEtODE4Yi02YTEyZjJhZjZiNmMiLCI2OTA5MTI0Ni0yMGU4LTRhNTYtYWE0ZC0wNjYwNzViMmE3YTgiLCJmZTkzMGJlNy01ZTYyLTQ3ZGItOTFhZi05OGMzYTQ5YTM4YjEiLCJmMmVmOTkyYy0zYWZiLTQ2YjktYjdjZi1hMTI2ZWU3NGM0NTEiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX3N0Ijp7InN1YiI6InRoRjl5aGlOeGh5a1dhWVpqWjgtVXMwSGtqTG80RjlnSlhRNVFxeElLNEkifSwieG1zX3RjZHQiOjE2MzM1MjYxMDJ9.gs0lVSwzwvY15lzXRu6NAkiXhQdUZKMR-S-iNn-eV3aH8AG_wZEpz3O5sBtC3h4Jh0GXBkhonzpJjtm6tTGfRJTi2P_azZEtJcV8a6tQ1m9xnzNsO4z74oOnG9kZvtbx6BQj8QSbIrka19Vx2HDqb5q64ZiyKR58Cp5vr8UOTE6WBPSr23XpLGkFcMlbIExdvtIEDDJsOJUWf9WoVfAkTPvxD_aF32DSBLPuUCylNyeMJV28AgXo42lJTyZlRTVeG_XbBcwFth0L-C8uvr9XLcEotM_XUegogspjx4P2fxRM6v8TzCzPd1Ul1JlQBuCu2haeDDr5P90RKds3jIxMzg";
+                    webRequest.Headers.Add("Authorization", $"Bearer {this.graphAPIToken}");
+
+                    using (System.IO.Stream s = webRequest.GetResponse().GetResponseStream())
+                    {
+                        using (System.IO.StreamReader sr = new System.IO.StreamReader(s))
+                        {
+                            var jsonResponse = sr.ReadToEnd();
+                            response = JsonConvert.DeserializeObject(jsonResponse);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+
+            return response;
+        }
+
+        private string GetChatIDFromAliasManual(string alias)
+        {
+            string WEBSERVICE_URL = "https://graph.microsoft.com/beta/me/chats/";
+            dynamic response = GetObjectFromGraphAPI(WEBSERVICE_URL);
+            string chatID = null;
+            //Console.WriteLine(String.Format("Response: {0}", response));
+            //Console.WriteLine(response["@odata.count"]);
+            foreach (var chat in response.value)
+            {
+                if (chat.chatType == "oneOnOne")
+                {
+                    string url = $"https://graph.microsoft.com/beta/chats/{chat.id}/members";
+                    dynamic chatInfo = GetObjectFromGraphAPI(url);
+                    if (Int32.Parse(chatInfo["@odata.count"].ToString()) == 2 && chatInfo.value[1].email.ToString().Split("@")[0].ToLower() == alias)
+                    {
+                        //Console.WriteLine(chat.id);
+                        chatID = chat.id.ToString();
+                        break;
+                    }
+                }
+            }
+
+            return chatID;
+        }
+
+        private object SendMessageWithChatID(string message, string chatID)
+        {
+            dynamic response = null;
+            try
+            {
+                var webRequest = System.Net.WebRequest.Create($"https://graph.microsoft.com/v1.0/chats/{chatID}/messages");
+                if (webRequest != null)
+                {
+                    webRequest.Method = "POST";
+                    webRequest.Timeout = 12000;
+                    webRequest.ContentType = "application/json";
+                    //var token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6Il93WXJ3SE9VdG4tcEtHVEJqaTZCT2ZaZ05UTFZsNjAyOU9FMl9DaHlVNHciLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0MTg4NDY3LCJuYmYiOjE2MzQxODg0NjcsImV4cCI6MTYzNDE5MjM2NywiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkUyWmdZRkNldTBiRTZTTEh6aGJOZThkN2psclA4WE9Xcy9sK2I4ckZub1RWYVFadEZqVUEiLCJhbXIiOlsicHdkIl0sImFwcF9kaXNwbGF5bmFtZSI6IkdyYXBoIEV4cGxvcmVyIiwiYXBwaWQiOiJkZThiYzhiNS1kOWY5LTQ4YjEtYThhZC1iNzQ4ZGE3MjUwNjQiLCJhcHBpZGFjciI6IjAiLCJmYW1pbHlfbmFtZSI6IksiLCJnaXZlbl9uYW1lIjoiUHJlZXRoYW0iLCJpZHR5cCI6InVzZXIiLCJpcGFkZHIiOiI1OS45My4yMjYuMjU1IiwibmFtZSI6IlByZWV0aGFtIEsiLCJvaWQiOiI2NzFlMTA3YS1lMTA3LTQ5YjctOTJiYy03NGY5OTUyMjAyM2MiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDE5NTM4MDkwMiIsInJoIjoiMC5BWEFBZU5TS0JNNmR4MEdxdjQ0dmFvM2xBclhJaTk3NTJiRklxSzIzU05weVVHUndBTTguIiwic2NwIjoiQXBwQ2F0YWxvZy5SZWFkLkFsbCBBcHBDYXRhbG9nLlJlYWRXcml0ZS5BbGwgQXBwQ2F0YWxvZy5TdWJtaXQgQ2hhdC5SZWFkIENoYXQuUmVhZEJhc2ljIENoYXQuUmVhZFdyaXRlIENoYXRNZW1iZXIuUmVhZCBDaGF0TWVtYmVyLlJlYWRXcml0ZSBEaXJlY3RvcnkuUmVhZC5BbGwgRGlyZWN0b3J5LlJlYWRXcml0ZS5BbGwgTWFpbC5SZWFkQmFzaWMgTm90ZXMuQ3JlYXRlIE5vdGVzLlJlYWQgTm90ZXMuUmVhZFdyaXRlIE5vdGVzLlJlYWRXcml0ZS5BbGwgb3BlbmlkIHByb2ZpbGUgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZEZvclVzZXIgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZFdyaXRlRm9yVXNlciBUZWFtc0FwcEluc3RhbGxhdGlvbi5SZWFkV3JpdGVTZWxmRm9yVXNlciBVc2VyLlJlYWQgZW1haWwiLCJzaWduaW5fc3RhdGUiOlsia21zaSJdLCJzdWIiOiJVNUQxTGtWbzJ1R2lBZldmY0xhMWhpOHdmZzhKMmFKaldSQmRDNkttUFRnIiwidGVuYW50X3JlZ2lvbl9zY29wZSI6IkFTIiwidGlkIjoiMDQ4YWQ0NzgtOWRjZS00MWM3LWFhYmYtOGUyZjZhOGRlNTAyIiwidW5pcXVlX25hbWUiOiJwcmVldGhhbWtAZ295YWxkZW1vLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6InByZWV0aGFta0Bnb3lhbGRlbW8ub25taWNyb3NvZnQuY29tIiwidXRpIjoiR0FlN1NmSUYxVWFIcFE2Ym1NRVZBQSIsInZlciI6IjEuMCIsIndpZHMiOlsiMjkyMzJjZGYtOTMyMy00MmZkLWFkZTItMWQwOTdhZjNlNGRlIiwiNjJlOTAzOTQtNjlmNS00MjM3LTkxOTAtMDEyMTc3MTQ1ZTEwIiwiZjAyM2ZkODEtYTYzNy00YjU2LTk1ZmQtNzkxYWMwMjI2MDMzIiwiNzI5ODI3ZTMtOWMxNC00OWY3LWJiMWItOTYwOGYxNTZiYmI4IiwiZjI4YTFmNTAtZjZlNy00NTcxLTgxOGItNmExMmYyYWY2YjZjIiwiNjkwOTEyNDYtMjBlOC00YTU2LWFhNGQtMDY2MDc1YjJhN2E4IiwiZmU5MzBiZTctNWU2Mi00N2RiLTkxYWYtOThjM2E0OWEzOGIxIiwiZjJlZjk5MmMtM2FmYi00NmI5LWI3Y2YtYTEyNmVlNzRjNDUxIiwiYjc5ZmJmNGQtM2VmOS00Njg5LTgxNDMtNzZiMTk0ZTg1NTA5Il0sInhtc19zdCI6eyJzdWIiOiJ0aEY5eWhpTnhoeWtXYVlaalo4LVVzMEhrakxvNEY5Z0pYUTVRcXhJSzRJIn0sInhtc190Y2R0IjoxNjMzNTI2MTAyfQ.HmHWviLQNYZHfQFnD4lKoA_IgRoTnKMR0-BuFqlEKsweaVbqNzbgd96BXNFVVYlc9_lEKySfe0jAyn2w-iMRb7PftJWBH3onKp38mCwz9T_Qc2xXZeF6vM70gciIEyD3N8sLFzo-HK0Q7bPHvzFhWYBIMHpPwFqvGlIbFsWiGDIfUufU6kroJ-n56yslIcVqqxGYTV_sMO9JdcE7sBNzhpk-gYZoFhsQI0IxUuxiLzipN2AXEeYD50L0JuoksgacJbhUx49J1yEjrjwJgeRZORSCjO1K2XQ61AxJazIiNdJysFKwLCoH2hNOmE3m8kwC13oRrKf87A10QrX6hvyX-w";
+                    webRequest.Headers.Add("Authorization", $"Bearer {this.graphAPIToken}");
+
+                    string stringData = " {\"body\": {\"content\": \" " + message + " \"}  } ";
+                    var data = Encoding.Default.GetBytes(stringData); // note: choose appropriate encoding
+                    webRequest.ContentLength = data.Length;
+
+                    var newStream = webRequest.GetRequestStream(); // get a ref to the request body so it can be modified
+                    newStream.Write(data, 0, data.Length);
+                    newStream.Close();
+
+                    using (System.IO.Stream s = webRequest.GetResponse().GetResponseStream())
+                    {
+                        using (System.IO.StreamReader sr = new System.IO.StreamReader(s))
+                        {
+                            var jsonResponse = sr.ReadToEnd();
+                            response = JsonConvert.DeserializeObject(jsonResponse);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+
+            return response;
+        }
+
 
         private async Task SendMessageToOneNoteAsync(string text, string heading)
         {
@@ -607,6 +754,47 @@ namespace Microsoft.BotBuilderSamples.Bots
                 var replyActivity = MessageFactory.Text(newReaction);
                 await turnContext.SendActivityAsync(replyActivity, cancellationToken);
             }
+        }
+
+
+        private async Task SendScheduledMessageResponse(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken, string replyText)
+        {
+            //var activity = GetCardForNewReminder(outputString);
+            // Echo back what the user said
+            await turnContext.SendActivityAsync(MessageFactory.Text(replyText), cancellationToken);
+        }
+
+
+        private async Task<string> GetChatIDFromAlias(string recipient)
+        {
+            var client = GetGraphClient();
+            var chats = await client.Me.Chats.Request().GetAsync();
+
+            //foreach (var chat in chats)
+            //{
+            //    var chatID = chat.Id;
+
+            //    var members = await client.Chats[chatID].Members
+            //                        .Request()
+            //                        .GetAsync();
+
+
+            //}
+            return chats.ToString();
+        }
+
+        protected IMessageActivity GetCardForResponse(String message, string alias, string dateTimeString)
+        {
+
+            var card = new HeroCard();
+
+            card.Title = "Scheduled Message Details";
+            card.Subtitle = $"To: {alias}, After: {dateTimeString} seconds";
+            card.Text = $"Message: {message}";
+
+            var activity = MessageFactory.Attachment(card.ToAttachment());
+            return activity;
+
         }
     }
 }
