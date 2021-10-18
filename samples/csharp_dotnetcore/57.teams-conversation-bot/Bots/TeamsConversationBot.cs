@@ -90,10 +90,9 @@ namespace Microsoft.BotBuilderSamples.Bots
                                     await SendMessageToOneNoteAsync(text2);
                                 }
                                 else */
-                if (text.Equals("scheduleMessageLater --help"))
+                if (text.Equals("schedulemessagelater --help"))
                     await turnContext.SendActivityAsync(MessageFactory.Text(infoText, infoText), cancellationToken);
-
-                else if (text.Contains("schedulemessagelater"))
+                                else if (text.Contains("schedulemessagelater"))
                     await ScheduleMessageLater(turnContext, cancellationToken, text);
                 else if (text.Contains("remindmelater"))
                     await SendReminderSetMessage(turnContext, cancellationToken);
@@ -122,7 +121,9 @@ namespace Microsoft.BotBuilderSamples.Bots
             string alias = text.Split(" ")[1].ToLower();
             string message = text.Split('[')[1].Split(']')[0];
             string dateTimeString = text.Split('[')[2].Split(']')[0];
-
+            DateTime myDate = DateTime.ParseExact(dateTimeString, "dd/MM HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+            myDate = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(myDate, "India Standard Time", "UTC");
+            int secondsToSend = ((int)(myDate - DateTime.UtcNow).TotalSeconds);
             //var replyText = $"**Message:** {message} {Environment.NewLine} **Scheduled at:** {dateTimeString} {Environment.NewLine} **To:** {alias}";
             //await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
             var responseCard = GetCardForResponse(message, alias, dateTimeString);
@@ -131,7 +132,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             try
             {
                 var chatID = GetChatIDFromAliasManual(alias);
-                Thread.Sleep(Int32.Parse(dateTimeString) * 1000);
+                Thread.Sleep(secondsToSend * 1000);
                 dynamic response = SendMessageWithChatID(message, chatID);
                 Console.WriteLine(response.body.content);
                 await turnContext.SendActivityAsync(MessageFactory.Text($"Message to {alias} has been sent!"), cancellationToken);
@@ -246,14 +247,14 @@ namespace Microsoft.BotBuilderSamples.Bots
 
         private async Task SendMessageToOneNoteAsync(string text, string heading)
         {
-            string token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6IlUyUk84aW9xUzJPenNBM3JibzBPYnhwVmJ5dmIzdk5WenctRHVySm1DZ1EiLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0MTk5OTI4LCJuYmYiOjE2MzQxOTk5MjgsImV4cCI6MTYzNDIwMzgyOCwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkFTUUEyLzhUQUFBQXBjTmhEb0NCSXRRVFRReHNsZWxkdHVWOCtOaUJOcTdCeHIxNGltSkwvdjA9IiwiYW1yIjpbInB3ZCJdLCJhcHBfZGlzcGxheW5hbWUiOiJHcmFwaCBFeHBsb3JlciIsImFwcGlkIjoiZGU4YmM4YjUtZDlmOS00OGIxLWE4YWQtYjc0OGRhNzI1MDY0IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJnb3lhbCIsImdpdmVuX25hbWUiOiJhc2VlbSIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjQ5LjM2LjE4OC4xNDQiLCJuYW1lIjoiYXNlZW0gZ295YWwiLCJvaWQiOiJkYmRmZDQxZC05YThmLTRjMWYtYWMzMS1kYTM2Y2ZlNzZlYzkiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDE5MkZFQzAzOSIsInJoIjoiMC5BWEFBZU5TS0JNNmR4MEdxdjQ0dmFvM2xBclhJaTk3NTJiRklxSzIzU05weVVHUndBQ2cuIiwic2NwIjoiQXBwQ2F0YWxvZy5SZWFkLkFsbCBBcHBDYXRhbG9nLlJlYWRXcml0ZS5BbGwgQXBwQ2F0YWxvZy5TdWJtaXQgQ2hhdC5SZWFkIENoYXQuUmVhZFdyaXRlIENoYXRNZW1iZXIuUmVhZCBDaGF0TWVtYmVyLlJlYWRXcml0ZSBEaXJlY3RvcnkuUmVhZC5BbGwgRGlyZWN0b3J5LlJlYWRXcml0ZS5BbGwgTWFpbC5SZWFkQmFzaWMgTm90ZXMuQ3JlYXRlIE5vdGVzLlJlYWQgTm90ZXMuUmVhZFdyaXRlIE5vdGVzLlJlYWRXcml0ZS5BbGwgb3BlbmlkIHByb2ZpbGUgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZEZvclVzZXIgVXNlci5SZWFkIGVtYWlsIiwic2lnbmluX3N0YXRlIjpbImttc2kiXSwic3ViIjoiQzJCSFh6LTNScHFRaGlPcHplNncydGpfUkI4TXpJdkNDUk12TlYySXBtdyIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJBUyIsInRpZCI6IjA0OGFkNDc4LTlkY2UtNDFjNy1hYWJmLThlMmY2YThkZTUwMiIsInVuaXF1ZV9uYW1lIjoiYXNlZW1AZ295YWxkZW1vLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImFzZWVtQGdveWFsZGVtby5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiIwT1drSzlFUUtrdW5OekI4QXVNakFBIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiLCJiNzlmYmY0ZC0zZWY5LTQ2ODktODE0My03NmIxOTRlODU1MDkiXSwieG1zX3N0Ijp7InN1YiI6ImxSRXZfUDFPR1l5WGlIbEVSSTdZemtfQ1NIUEtvREVjZWZQS2wxUVBramsifSwieG1zX3RjZHQiOjE2MzM1MjYxMDJ9.TmyM_1kvu6z7QRyukm6GZ0EGrvQWXV2YioshU8h9acjyHKq3gz_Zlq_N5bu3s81dJtg29iq9fRpVJUZYu7DwT1GXnwQ7voljSkKa1AeppeNFrgDlkDXxgq4-a-n2WnJetxo_vusD-kbCw7WxIqOHH4OXCmVQM42yHYF1gOZeqjX6j6m3rJOQe-X0-OfqM5buRvNue4E_woSyg_lesUDJa8b-GUP_ZtG4LiekSg3nDkQVBn9pQI8wRz5pPHBEPVWBimmZricpnqLvMIx8NNKZdvGS6-32kNzM-t60ooL1Eeku5O2zpLYEV3egaVM2StW85NZGllwuB9b6FWmwCZpycg";
+            string token = "eyJ0eXAiOiJKV1QiLCJub25jZSI6IjJkYUNGZWxrdndNTHJOdThrWFZJVWtUekxVd3hNcjBYaFVtTnAxY1ZLdHciLCJhbGciOiJSUzI1NiIsIng1dCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiIwMDAwMDAwMy0wMDAwLTAwMDAtYzAwMC0wMDAwMDAwMDAwMDAiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIvIiwiaWF0IjoxNjM0NTM0NDc2LCJuYmYiOjE2MzQ1MzQ0NzYsImV4cCI6MTYzNDUzODM3NiwiYWNjdCI6MCwiYWNyIjoiMSIsImFpbyI6IkFTUUEyLzhUQUFBQXhzM3pvSlE3QWh6Q0gvNWdqRHdLU1I0YkdZTEN2anA0bnlEM3Q2U1g1ejQ9IiwiYW1yIjpbInB3ZCJdLCJhcHBfZGlzcGxheW5hbWUiOiJHcmFwaCBFeHBsb3JlciIsImFwcGlkIjoiZGU4YmM4YjUtZDlmOS00OGIxLWE4YWQtYjc0OGRhNzI1MDY0IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJnb3lhbCIsImdpdmVuX25hbWUiOiJhc2VlbSIsImlkdHlwIjoidXNlciIsImlwYWRkciI6IjQ5LjM2LjE4OC4xNDQiLCJuYW1lIjoiYXNlZW0gZ295YWwiLCJvaWQiOiJkYmRmZDQxZC05YThmLTRjMWYtYWMzMS1kYTM2Y2ZlNzZlYzkiLCJwbGF0ZiI6IjMiLCJwdWlkIjoiMTAwMzIwMDE5MkZFQzAzOSIsInJoIjoiMC5BWEFBZU5TS0JNNmR4MEdxdjQ0dmFvM2xBclhJaTk3NTJiRklxSzIzU05weVVHUndBQ2cuIiwic2NwIjoiQXBwQ2F0YWxvZy5SZWFkLkFsbCBBcHBDYXRhbG9nLlJlYWRXcml0ZS5BbGwgQXBwQ2F0YWxvZy5TdWJtaXQgQ2hhdC5SZWFkIENoYXQuUmVhZFdyaXRlIENoYXRNZW1iZXIuUmVhZCBDaGF0TWVtYmVyLlJlYWRXcml0ZSBEZXZpY2VNYW5hZ2VtZW50QXBwcy5SZWFkV3JpdGUuQWxsIERldmljZU1hbmFnZW1lbnRDb25maWd1cmF0aW9uLlJlYWRXcml0ZS5BbGwgRGV2aWNlTWFuYWdlbWVudE1hbmFnZWREZXZpY2VzLlJlYWRXcml0ZS5BbGwgRGV2aWNlTWFuYWdlbWVudFNlcnZpY2VDb25maWcuUmVhZFdyaXRlLkFsbCBEaXJlY3RvcnkuQWNjZXNzQXNVc2VyLkFsbCBEaXJlY3RvcnkuUmVhZC5BbGwgRGlyZWN0b3J5LlJlYWRXcml0ZS5BbGwgTWFpbC5SZWFkQmFzaWMgTm90ZXMuQ3JlYXRlIE5vdGVzLlJlYWQgTm90ZXMuUmVhZFdyaXRlIE5vdGVzLlJlYWRXcml0ZS5BbGwgb3BlbmlkIHByb2ZpbGUgVGVhbXNBcHBJbnN0YWxsYXRpb24uUmVhZEZvclVzZXIgVXNlci5SZWFkIFVzZXIuUmVhZFdyaXRlLkFsbCBlbWFpbCIsInN1YiI6IkMyQkhYei0zUnBxUWhpT3B6ZTZ3MnRqX1JCOE16SXZDQ1JNdk5WMklwbXciLCJ0ZW5hbnRfcmVnaW9uX3Njb3BlIjoiQVMiLCJ0aWQiOiIwNDhhZDQ3OC05ZGNlLTQxYzctYWFiZi04ZTJmNmE4ZGU1MDIiLCJ1bmlxdWVfbmFtZSI6ImFzZWVtQGdveWFsZGVtby5vbm1pY3Jvc29mdC5jb20iLCJ1cG4iOiJhc2VlbUBnb3lhbGRlbW8ub25taWNyb3NvZnQuY29tIiwidXRpIjoiRXNoRUowbkRLMFdvM0VuZFBCcnhBQSIsInZlciI6IjEuMCIsIndpZHMiOlsiNjJlOTAzOTQtNjlmNS00MjM3LTkxOTAtMDEyMTc3MTQ1ZTEwIiwiYjc5ZmJmNGQtM2VmOS00Njg5LTgxNDMtNzZiMTk0ZTg1NTA5Il0sInhtc19zdCI6eyJzdWIiOiJsUkV2X1AxT0dZeVhpSGxFUkk3WXprX0NTSFBLb0RFY2VmUEtsMVFQa2prIn0sInhtc190Y2R0IjoxNjMzNTI2MTAyfQ.fX9OejcNtevN1dYWK4BFEdk6zubGVclyUp8rNMV5nS1aPgBp2_jnGi9QRnUq5IXMfBxud3pwWbM9X1q7M_iSmq3Z5zH5QRcSkZLRr53qRnBjNyZBNtILqvvCrhH1BOFeqKaxqm-vfY96Xs2_NmBmADDJY-sB0w-YePBQg1EWzW1vlnPeTBGWvRnB-PRUTVy9VBGku262zV91uPw05IXuF7fs-ltdTvWHc4oKDITXSBiQcSSHseMfrR2ckVjMeMMtm1ENO-13Sy7sVYNkLpuyGTigphN8rbm7Q2r0n-5VMDzqGocgd1EXQ78WbpGRaD4qjEYpvmSveVQJi2oedhxITg";
             using (var client = new HttpClient())
             {
                 string inputMsg = text;//turnContext.Activity.Text.Trim().ToLower();
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 using (var content = new MultipartFormDataContent("MyPartBoundary198374"))
                 {
-                    var stringContent = new StringContent("<head><title>" + heading + "</title></head><body>" + text + "</body>", Encoding.UTF8, "text/html");
+                    var stringContent = new StringContent("<html><head><title>" + heading + "</title></head><body>" + text + "</body></html>", Encoding.UTF8, "text/html");
 
                     //var stringContent = new StringContent("<html><body>" + text + "</body></html>", Encoding.UTF8, "text/html");
                     //var stringContent = new StringContent("<html><body>" + text + "</body></html>", Encoding.UTF8, "text/html");
@@ -777,7 +778,7 @@ namespace Microsoft.BotBuilderSamples.Bots
             var card = new HeroCard();
 
             card.Title = "Scheduled Message Details";
-            card.Subtitle = $"To: {alias}, After: {dateTimeString} seconds";
+            card.Subtitle = $"To: {alias}, At: {dateTimeString}";
             card.Text = $"Message: {message}";
 
             var activity = MessageFactory.Attachment(card.ToAttachment());
