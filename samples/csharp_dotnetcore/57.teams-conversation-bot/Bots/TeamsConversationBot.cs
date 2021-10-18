@@ -54,13 +54,13 @@ namespace Microsoft.BotBuilderSamples.Bots
             reminderId++;
             remindersStore.Add(reminderId, new MessageModel
             {
-                text = "Please review the design document",
+                text = "Please review the design document : OCB HLD https://microsoft.sharepoint-df.com/:w:/t/TorusCrew/EaZer-XQoYxHn6OnV9nXur8BslVNrDEljKUMoZHuDthX2Q?e=bQGJOo",
                 date = "20-10-2021 10:30:52 AM"
             });
             reminderId++;
             remindersStore.Add(reminderId, new MessageModel
             {
-                text = "Please review the PR",
+                text = "Please review the PR: https://msazure.visualstudio.com/One/_git/Azure-Deployment-Builder/pullrequest/5074671",
                 date = "20-11-2021"
             });
 
