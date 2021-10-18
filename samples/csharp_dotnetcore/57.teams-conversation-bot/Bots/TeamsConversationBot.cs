@@ -39,6 +39,7 @@ namespace Microsoft.BotBuilderSamples.Bots
         public readonly string clientID;
         public readonly string clientSecret;
         public readonly string graphAPIToken;
+        public static string previousExtensionMessage;
 
 
         public TeamsConversationBot(IConfiguration config)
@@ -96,6 +97,8 @@ namespace Microsoft.BotBuilderSamples.Bots
                     await ScheduleMessageLater(turnContext, cancellationToken, text);
                 else if (text.Contains("remindmelater"))
                     await SendReminderSetMessage(turnContext, cancellationToken);
+                else if (text.Contains("."))
+                    await SendReminderHack(turnContext, cancellationToken);
                 else if (text.Contains("listreminders"))
                     await ListAllReminders(turnContext, cancellationToken);
                 else if (text.Contains("update"))
@@ -115,6 +118,10 @@ namespace Microsoft.BotBuilderSamples.Bots
             }
         }
 
+        private async Task SendReminderHack(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken) {
+            var message = previousExtensionMessage;
+            await SendReminderHack(message, turnContext, cancellationToken);
+        }
 
         private async Task ScheduleMessageLater(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken, string text)
         {
@@ -330,7 +337,7 @@ namespace Microsoft.BotBuilderSamples.Bots
                 link = messageLink,
                 date = timeSnooze
             };
-
+            previousExtensionMessage = action.MessagePayload.Body.Content;
             reminderId++;
             remindersStore.Add(reminderId, previousmessage);
 
